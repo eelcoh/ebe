@@ -113,7 +113,7 @@ view model =
                     , model.decoded
                     )
     in
-    div []
+    div [ style "margin" "20px" ]
         [ div [] [ h1 [] [ text "Ebe's Codeermachine" ] ]
         , errors
         , div []
@@ -144,8 +144,7 @@ errors =
             checkDoubles
 
         doublesString d =
-            List.map String.fromInt d
-                |> String.join ", "
+            String.join ", " d
                 |> (++) "er zijn getallen meerdere malen gebruikt: "
 
         error d =

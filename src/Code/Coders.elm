@@ -5,14 +5,15 @@ import Dict exposing (Dict)
 import Random exposing (Seed)
 import Random.List
 import Set exposing (Set)
+import String.Extra
 
 
 type alias Encoding =
-    Dict Char (Set Int)
+    Dict Char (Set String)
 
 
 type alias Decoding =
-    Dict Int Char
+    Dict String Char
 
 
 initialSeed : Seed
@@ -29,7 +30,8 @@ encodeString str =
         enc =
             encoding
     in
-    String.toList str
+    String.toLower str
+        |> String.toList
         |> List.foldl (encode enc) ( "", seed )
         |> Tuple.first
 
@@ -40,7 +42,7 @@ decodeString str =
         dec =
             decoding
     in
-    String.split " " str
+    String.Extra.break 2 str
         |> List.map (decode dec)
         |> String.fromList
 
@@ -49,8 +51,8 @@ encode : Encoding -> Char -> ( String, Seed ) -> ( String, Seed )
 encode enc ch ( str, seed ) =
     let
         addToString mA =
-            Maybe.withDefault "002" mA
-                |> (\s -> String.join " " [ str, s ])
+            Maybe.withDefault "02" mA
+                |> (\s -> String.join "" [ str, s ])
 
         clean ( mA, s ) =
             ( addToString mA
@@ -59,8 +61,7 @@ encode enc ch ( str, seed ) =
     in
     Dict.get ch enc
         |> Maybe.map Set.toList
-        |> Maybe.withDefault (List.singleton 1)
-        |> List.map String.fromInt
+        |> Maybe.withDefault (List.singleton "55")
         |> Random.List.choose
         |> Random.map Tuple.first
         |> (\g -> Random.step g seed)
@@ -69,20 +70,18 @@ encode enc ch ( str, seed ) =
 
 decode : Decoding -> String -> Char
 decode dec num =
-    String.toInt num
-        |> Maybe.withDefault 1
-        |> (\k -> Dict.get k dec)
+    Dict.get num dec
         |> Maybe.withDefault '*'
 
 
 encoding : Encoding
 encoding =
     let
-        enc : Dict Char (Set Int)
+        enc : Encoding
         enc =
             Dict.empty
 
-        add : ( Char, Int ) -> Encoding -> Dict Char (Set Int)
+        add : ( Char, String ) -> Encoding -> Dict Char (Set String)
         add ( k, v ) d =
             Dict.get k d
                 |> Maybe.withDefault Set.empty
@@ -102,10 +101,10 @@ decoding =
         |> Dict.fromList
 
 
-doubles : List Int -> List Int
+doubles : List String -> List String
 doubles ints =
     let
-        processInt : Int -> ( Set Int, Set Int ) -> ( Set Int, Set Int )
+        processInt : String -> ( Set String, Set String ) -> ( Set String, Set String )
         processInt i ( areIn, doubleInts ) =
             if Set.member i areIn then
                 ( areIn, Set.insert i doubleInts )
@@ -118,7 +117,7 @@ doubles ints =
         |> Set.toList
 
 
-checkDoubles : List Int
+checkDoubles : List String
 checkDoubles =
     List.map Tuple.second code
         |> doubles
